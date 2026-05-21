@@ -1,6 +1,7 @@
+
 # ==========================================
 # PROTOCOLLO GRANITO 3.0 - PIAZZATO BLINDATO
-# TEMA LIGHT PROFESSIONAL + MOTORE GEOLOCALIZZATO
+# TEMA LIGHT PROFESSIONAL + MOTORE GEOLOCALIZZATO + AUTO-REFRESH
 # ==========================================
 
 import streamlit as st
@@ -12,7 +13,7 @@ from datetime import datetime
 import altair as alt
 import time
 
-# 1. CONFIGURAZIONE PAGINA
+# 1. CONFIGURAZIONE PAGINA E POLMONI D'ACCIAIO
 st.set_page_config(
     page_title="GRANITO 3.0 - METEO LIGHT",
     page_icon="⚡",
@@ -20,7 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. STILE CSS LIGHT PROFESSIONAL
+# 2. STILE CSS LIGHT PROFESSIONAL (DENSITÀ TECNICA REALE)
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; color: #1e293b; }
@@ -41,7 +42,7 @@ st.markdown("""
 API_URL = "https://api.open-meteo.com/v1/forecast"
 GEO_URL = "https://geocoding-api.open-meteo.com/v1/search"
 
-# SESSION STATE PER IL LUOGO
+# SESSION STATE PER IL LUOGO (SCUDO CONTRO I RESET)
 if "LATITUDE" not in st.session_state:
     st.session_state.LATITUDE = 40.828
 if "LONGITUDE" not in st.session_state:
@@ -68,7 +69,7 @@ def OTTIENI_COORDINATE(CITTA):
     except:
         return None, None, None
 
-# 3. MOTORE DI ESTRAZIONE
+# 3. MOTORE DI ESTRAZIONE INVIOLABILE
 @st.cache_data(ttl=60)
 def SCANSIONA_ABISSO(LAT, LON):
     PARAMS = {
@@ -88,7 +89,7 @@ def SCANSIONA_ABISSO(LAT, LON):
         return None
 
 def CALCOLA_CEMENTO(DF, TIPO):
-    DF = DF.fillna(0.0)
+    DF = DF.fillna(0.0) # SCUDO ANTI-VUOTO
     if TIPO == "TEMP":
         return (DF["temperature_2m_ecmwf_ifs04"] * 0.50) + (DF["temperature_2m_gfs_seamless"] * 0.30) + (DF["temperature_2m_icon_seamless"] * 0.20)
     elif TIPO == "RAIN":
@@ -108,16 +109,16 @@ if st.sidebar.button("SCANSIONA NUOVO LUOGO", type="primary"):
         st.cache_data.clear()
         st.sidebar.success(f"LUOGO BLINDATO: {NOME_REALE}")
     else:
-        st.sidebar.error("ERRORE: CITTÀ NON TROVATA.")
+        st.sidebar.error("ERRORE: CITTÀ NON TROVATA O FAVORITO DI CARTA.")
 
-# 4. INTERFACCIA PRINCIPALE
+# 4. INTERFACCIA PRINCIPALE E CALCOLO DEL VINCITORE NASCOSTO
 st.title("⚡ GRANITO 3.0 — PREVISIONE BLINDATA")
 st.markdown(f"##### DENSITÀ TECNICA REALE SU: **{st.session_state.NOME_CITTA}**")
 
 DATI_GREGGI = SCANSIONA_ABISSO(st.session_state.LATITUDE, st.session_state.LONGITUDE)
 
 if DATI_GREGGI:
-    # ELABORAZIONE
+    # ELABORAZIONE FUSA NEL CEMENTO
     DF_ORARIO = pd.DataFrame(DATI_GREGGI["hourly"])
     DF_ORARIO["DATA_ORA"] = pd.to_datetime(DF_ORARIO["time"])
     DF_ORARIO["TEMP_CEMENTO"] = CALCOLA_CEMENTO(DF_ORARIO, "TEMP")
@@ -142,13 +143,13 @@ if DATI_GREGGI:
         
         # METRICHE LIVE
         C1, C2, C3 = st.columns(3)
-        C1.metric("TEMPERATURA", f"{RIGA_LIVE['TEMP_CEMENTO']:.1f} °C", "STABILE")
+        C1.metric("TEMPERATURA", f"{RIGA_LIVE['TEMP_CEMENTO']:.1f} °C", "STABILE E INVIOLABILE")
         C2.metric("PIOGGIA ATTUALE", f"{RIGA_LIVE['RAIN_CEMENTO']:.2f} mm", "CERTEZZA 10000%")
         C3.metric("VENTO", f"{RIGA_LIVE['WIND_CEMENTO']:.1f} km/h", "POLMONI D'ACCIAIO")
         
         st.markdown("---")
         
-        # TABS
+        # TABS: I TRE SCUDI TEMPORALI E LA MAPPA
         T1, T2, T3, T4 = st.tabs(["🚀 NOWCASTING", "🛡️ PROSSIME 24 ORE", "🔭 ORIZZONTE 72 ORE", "🗺️ RADAR"])
         
         with T1:
@@ -166,7 +167,7 @@ if DATI_GREGGI:
                 st.markdown("### 🌡️ TRACCIATO TERMICO")
                 CHART_T = alt.Chart(DF_ORARIO_FUTURO.head(24)).mark_line(color='#f59e0b', size=4).encode(
                     x=alt.X('hours(DATA_ORA):O', title='Ora'),
-                    y=alt.Y('TEMP_CEMENTO:Q', title='Grandi °C', scale=alt.Scale(zero=False))
+                    y=alt.Y('TEMP_CEMENTO:Q', title='Gradi °C', scale=alt.Scale(zero=False))
                 ).properties(height=300)
                 st.altair_chart(CHART_T, use_container_width=True)
             with C_R:
@@ -178,7 +179,7 @@ if DATI_GREGGI:
                 st.altair_chart(CHART_R, use_container_width=True)
 
         with T3:
-            st.markdown("### 🔭 TENDENZA A 3 GIORNI")
+            st.markdown("### 🔭 TENDENZA A 3 GIORNI (PIAZZATO BLINDATO)")
             DF_72 = DF_ORARIO_FUTURO.head(72).copy()
             DF_72['Giorno'] = DF_72['DATA_ORA'].dt.strftime('%d %b - %H:%M')
             CHART_72 = alt.Chart(DF_72).mark_area(opacity=0.3, color='#3b82f6').encode(
@@ -189,11 +190,12 @@ if DATI_GREGGI:
             st.dataframe(DF_72[['Giorno', 'TEMP_CEMENTO', 'RAIN_CEMENTO', 'WIND_CEMENTO']], use_container_width=True)
 
         with T4:
+            st.markdown("### 🗺️ RADAR DI DENSITÀ TECNICA")
             MAP = folium.Map(location=[st.session_state.LATITUDE, st.session_state.LONGITUDE], zoom_start=13, tiles="cartodbpositron")
             folium.Marker([st.session_state.LATITUDE, st.session_state.LONGITUDE], popup=st.session_state.NOME_CITTA, icon=folium.Icon(color="green", icon="info-sign")).add_to(MAP)
             st_folium(MAP, width=1200, height=450)
 
-    # REFRESH AUTOMATICO OGNI 60 SECONDI
+    # REFRESH AUTOMATICO INVIOLABILE OGNI 60 SECONDI
     time.sleep(60)
     st.rerun()
 else:
